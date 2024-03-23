@@ -57,8 +57,7 @@ export async function tick(state: State): Promise<void> {
     // }
 
     const status: mastodon.Status = {
-      // visibility: "public",
-      visibility: "private",
+      visibility: "public",
       language: "ru",
       sensitive: sensitiveTags.length > 0,
       spoiler_text: sensitiveTags.length > 0 ? sensitiveTags.join(", ") : undefined,
