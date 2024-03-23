@@ -6,7 +6,9 @@ import * as fs from "node:fs/promises";
 import * as bot from "./bot.js";
 
 const { STATE_FILENAME = "./state.json", TICK_INTERVAL = 60 * 60 * 1000 } = env;
+
 setInterval(tick, Number(TICK_INTERVAL));
+tick();
 
 async function tick() {
   try {

@@ -6,7 +6,7 @@ networks:
 
 services:
   bot:
-    build: .
+    image: ghcr.io/iliazeus/mastodon-rikibooru:master
     volumes:
       - ./state.json:/app/state.json:rw
       - ./.env:/app/.env:ro
