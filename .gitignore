@@ -1,0 +1,4 @@
+/.env
+/state.json
+/dist/
+/node_modules/

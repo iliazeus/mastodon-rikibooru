@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "esbuild": "^0.20.2",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "undici": "^6.10.1"
+  }
+}
