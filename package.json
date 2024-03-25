@@ -2,8 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/main.js"
+    "build": "./scripts/build.sh",
+    "start": "./dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
