@@ -39,15 +39,13 @@ export async function tick(state: State): Promise<void> {
 
     const imageInfo = await rikibooru.getImageInfo(booruId);
 
-    const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
-    const tagNames = imageInfo.tags.map((x) => allTagNames.get(x)).filter((x) => !!x);
-    const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
-
     if (imageInfo.tags.length === 0) {
       // moderators often add tags later; we can just wait until that is done
       booruId -= 1;
       continue;
     }
+
+    const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
 
     // if (sensitiveTags.length > 0) {
     //   // TODO: should we allow this?
@@ -56,13 +54,20 @@ export async function tick(state: State): Promise<void> {
     //   continue;
     // }
 
+    const tagNames = imageInfo.tags.map((x) => allTagNames.get(x)).filter((x) => !!x);
+    if (!tagNames.includes("Смешарик")) tagNames.unshift("Смешарики");
+
+    const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
+    if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
+
     const status: mastodon.Status = {
       visibility: "public",
       language: "ru",
       sensitive: sensitiveTags.length > 0,
       spoiler_text: sensitiveTags.length > 0 ? sensitiveTags.join(", ") : undefined,
+      // prettier-ignore
       status: [
-        ["Смешарики", ...tagNames].join("; "),
+        tagNames.join("; "),
         `source: ${imageInfo.linktopost}`,
         "",
         hashtags.join(" "),
@@ -71,7 +76,7 @@ export async function tick(state: State): Promise<void> {
 
     const media: mastodon.Media = {
       file: await rikibooru.getImage(imageInfo),
-      description: ["Смешарики", ...tagNames].join("; "),
+      description: tagNames.join("; "),
     };
 
     const res = await mastodon.postStatusWithAttachments(status, [media]);
