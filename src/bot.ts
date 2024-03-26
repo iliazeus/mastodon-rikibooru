@@ -5,7 +5,6 @@ import * as rikibooru from "./rikibooru.js";
 
 export interface State {
   skippedVkIds: number[];
-  postHistory: PostHistoryItem[];
 }
 
 export interface PostHistoryItem {
@@ -14,11 +13,16 @@ export interface PostHistoryItem {
 }
 
 export function initialState(): State {
-  return { skippedVkIds: [], postHistory: [] };
+  return { skippedVkIds: [] };
 }
 
 /** mutates `state`, which needs to be persisted after the call */
-export async function tick(state: State): Promise<void> {
+export async function tick(opts: {
+  state: State;
+  historyPush: (item: PostHistoryItem) => void | Promise<void>;
+}): Promise<void> {
+  const { state, historyPush } = opts;
+
   const meta = await rikibooru.getMetadata();
 
   const allSensitiveTags = meta[3].tags.map((x) => x.tag).filter((x) => x !== "пейр");
@@ -37,11 +41,6 @@ export async function tick(state: State): Promise<void> {
     imageInfo = await rikibooru.getImageInfo(booruId);
 
     // it turns out booru ids aren't persistent, so we check by vk_id
-    if (state.postHistory.some((x) => x.imageInfo.vk_id === imageInfo.vk_id)) {
-      booruId -= 1;
-      continue;
-    }
-
     if (state.skippedVkIds.includes(imageInfo.vk_id)) {
       booruId -= 1;
       continue;
@@ -87,8 +86,6 @@ export async function tick(state: State): Promise<void> {
 
   const mastodonStatus = await mastodon.postStatusWithAttachments(status, [media]);
 
-  state.postHistory.push({
-    imageInfo,
-    mastodonStatus,
-  });
+  state.skippedVkIds.push(imageInfo.vk_id);
+  await historyPush({ imageInfo, mastodonStatus });
 }
