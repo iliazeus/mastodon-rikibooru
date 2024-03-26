@@ -1,19 +1,20 @@
+import assert from "node:assert/strict";
+
 import * as mastodon from "./mastodon.js";
 import * as rikibooru from "./rikibooru.js";
 
 export interface State {
+  skippedVkIds: number[];
   postHistory: PostHistoryItem[];
-  skippedBooruIds: number[];
 }
 
 export interface PostHistoryItem {
-  booruId: number;
-  mastodonId: string;
-  postedAt: Date;
+  imageInfo: rikibooru.ImageInfo;
+  mastodonStatus: mastodon.Status;
 }
 
 export function initialState(): State {
-  return { postHistory: [], skippedBooruIds: [] };
+  return { skippedVkIds: [], postHistory: [] };
 }
 
 /** mutates `state`, which needs to be persisted after the call */
@@ -29,64 +30,65 @@ export async function tick(state: State): Promise<void> {
   );
 
   let booruId = meta[0].sum_count - 1;
-  while (true) {
-    while (
-      state.postHistory.some((x) => x.booruId === booruId) ||
-      state.skippedBooruIds.includes(booruId)
-    ) {
-      booruId -= 1;
-    }
+  let imageInfo: rikibooru.ImageInfo;
 
-    const imageInfo = await rikibooru.getImageInfo(booruId);
+  let foundImage = false;
+  while (!foundImage) {
+    imageInfo = await rikibooru.getImageInfo(booruId);
 
-    if (imageInfo.tags.length === 0) {
-      // moderators often add tags later; we can just wait until that is done
+    // it turns out booru ids aren't persistent, so we check by vk_id
+    if (state.postHistory.some((x) => x.imageInfo.vk_id === imageInfo.vk_id)) {
       booruId -= 1;
       continue;
     }
 
-    const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
+    if (state.skippedVkIds.includes(imageInfo.vk_id)) {
+      booruId -= 1;
+      continue;
+    }
 
-    // if (sensitiveTags.length > 0) {
-    //   // TODO: should we allow this?
-    //   state.skippedBooruIds.push(booruId);
-    //   booruId -= 1;
-    //   continue;
-    // }
+    // moderators often add tags later; we can just wait until that is done
+    if (imageInfo.tags.length === 0) {
+      booruId -= 1;
+      continue;
+    }
 
-    const tagNames = imageInfo.tags.map((x) => allTagNames.get(x)).filter((x) => !!x);
-    if (!tagNames.includes("Смешарик")) tagNames.unshift("Смешарики");
+    foundImage = true;
+  }
 
-    const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
-    if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
+  assert(imageInfo!);
 
-    const status: mastodon.Status = {
-      visibility: "public",
-      language: "ru",
-      sensitive: sensitiveTags.length > 0,
-      spoiler_text: sensitiveTags.length > 0 ? sensitiveTags.join(", ") : undefined,
-      // prettier-ignore
-      status: [
+  const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
+
+  const tagNames = imageInfo.tags.map((x) => allTagNames.get(x)).filter((x) => !!x);
+  if (!tagNames.includes("Смешарик")) tagNames.unshift("Смешарики");
+
+  const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
+  if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
+
+  const status: mastodon.Status = {
+    visibility: "public",
+    language: "ru",
+    sensitive: sensitiveTags.length > 0,
+    spoiler_text: sensitiveTags.length > 0 ? sensitiveTags.join(", ") : undefined,
+    // prettier-ignore
+    status: [
         tagNames.join("; "),
         `source: ${imageInfo.linktopost}`,
         "",
         hashtags.join(" "),
       ].join("\n"),
-    };
+  };
 
-    const media: mastodon.Media = {
-      file: await rikibooru.getImage(imageInfo),
-      description: tagNames.join("; "),
-    };
+  const media: mastodon.Media = {
+    file: await rikibooru.getImage(imageInfo),
+    description: tagNames.join("; "),
+  };
 
-    const res = await mastodon.postStatusWithAttachments(status, [media]);
+  const mastodonStatus = await mastodon.postStatusWithAttachments(status, [media]);
 
-    state.postHistory.push({
-      booruId: booruId,
-      mastodonId: res.id,
-      postedAt: new Date(),
-    });
-
-    return;
-  }
+  state.postHistory.push({
+    imageInfo,
+    mastodonStatus,
+  });
 }

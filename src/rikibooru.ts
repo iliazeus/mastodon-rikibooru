@@ -82,7 +82,7 @@ export async function getImage(info: ImageInfo): Promise<File> {
 
   const blob = await response.blob();
   const url = new URL(info.linktopic);
-  const filename = basename(url.pathname);
+  const extension = basename(url.pathname).split(".").at(-1);
 
-  return new File([blob], filename, { type: blob.type });
+  return new File([blob], `${info.vk_id}.${extension}`, { type: blob.type });
 }
