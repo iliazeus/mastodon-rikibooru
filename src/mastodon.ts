@@ -8,7 +8,7 @@ assert(MASTODON_BASE_URL);
 assert(MASTODON_USERNAME);
 assert(MASTODON_ACCESS_TOKEN);
 
-const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/${MASTODON_USERNAME})`;
+const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`;
 
 export interface Status {
   status?: string;

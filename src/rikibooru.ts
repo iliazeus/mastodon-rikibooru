@@ -8,7 +8,7 @@ const { MASTODON_BASE_URL, MASTODON_USERNAME } = env;
 assert(MASTODON_BASE_URL);
 assert(MASTODON_USERNAME);
 
-const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/${MASTODON_USERNAME})`;
+const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`;
 
 export type Metadata = [
   header: MetadataHeaderItem,
