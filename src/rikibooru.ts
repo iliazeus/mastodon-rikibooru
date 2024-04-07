@@ -4,11 +4,12 @@ import assert from "node:assert/strict";
 import { env } from "node:process";
 import { basename } from "node:path/posix";
 
-const { MASTODON_BASE_URL, MASTODON_USERNAME } = env;
+const { MASTODON_BASE_URL, MASTODON_USERNAME, OWNER_EMAIL } = env;
 assert(MASTODON_BASE_URL);
 assert(MASTODON_USERNAME);
+assert(OWNER_EMAIL);
 
-const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`;
+const USER_AGENT = `mastodon-rikibooru/0.1 (${MASTODON_BASE_URL}/@${MASTODON_USERNAME}; ${OWNER_EMAIL})`;
 
 export type Metadata = [
   header: MetadataHeaderItem,
@@ -57,6 +58,13 @@ export interface ImageInfo {
   parent_id: unknown;
 }
 
+export interface ImageQueryResult {
+  vk_id: number;
+  linktopic: string;
+  linktopost: string;
+  parent_id: unknown;
+}
+
 export async function getMetadata(): Promise<Metadata> {
   const response = await fetch("https://rikibooru.host/rikibooru/metadata", {
     headers: { "User-Agent": USER_AGENT },
@@ -72,6 +80,23 @@ export async function getImageInfo(id: number): Promise<ImageInfo> {
   if (response.status !== 200) throw new Error(await response.text());
   const [info] = (await response.json()) as any;
   return info;
+}
+
+export async function queryImages(query: string): Promise<ImageQueryResult[]> {
+  const response = await fetch("https://rikibooru.host/rikibooru/query=" + query, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+  if (response.status !== 200) throw new Error(await response.text());
+  return await response.json();
+}
+
+export async function getImagesFromVkPost(linkToPost: string): Promise<ImageInfo[]> {
+  const postId = linkToPost.slice("https://vk.com/".length);
+  const response = await fetch("https://rikibooru.host/rikibooru/post=" + postId, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+  if (response.status !== 200) throw new Error(await response.text());
+  return await response.json();
 }
 
 export async function getImage(info: ImageInfo): Promise<File> {

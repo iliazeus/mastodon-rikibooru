@@ -1,4 +1,6 @@
 /.env
 /state.json
+/booru.json
+/history.jsonl
 /dist/
 /node_modules/

@@ -1,6 +1,5 @@
 {
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "./scripts/build.sh",
     "start": "./dist/main.js"

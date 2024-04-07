@@ -1,27 +1,56 @@
-import assert from "node:assert/strict";
+import "dotenv/config";
 
-import * as mastodon from "./mastodon.js";
-import * as rikibooru from "./rikibooru.js";
+import { env } from "node:process";
+import * as fs from "node:fs/promises";
 
-export interface State {
+import * as mastodon from "./mastodon";
+import * as rikibooru from "./rikibooru";
+
+const {
+  BOORU_DB_FILENAME = "./booru.json",
+  STATE_FILENAME = "./state.json",
+  HISTORY_FILENAME = "./history.jsonl",
+} = env;
+
+interface State {
   skippedVkIds: number[];
 }
 
-export interface PostHistoryItem {
+interface PostHistoryItem {
   imageInfo: rikibooru.ImageInfo;
   mastodonStatus: mastodon.Status;
 }
 
-export function initialState(): State {
-  return { skippedVkIds: [] };
+interface BooruDb {
+  /** @example Date.now() */
+  updatedAt: number;
+  images: rikibooru.ImageQueryResult[];
 }
 
-/** mutates `state`, which needs to be persisted after the call */
-export async function tick(opts: {
-  state: State;
-  historyPush: (item: PostHistoryItem) => void | Promise<void>;
-}): Promise<void> {
-  const { state, historyPush } = opts;
+export async function init(): Promise<void> {
+  try {
+    await fs.access(BOORU_DB_FILENAME);
+  } catch {
+    const db: BooruDb = { updatedAt: Date.now(), images: await rikibooru.queryImages("-") };
+    await fs.writeFile(BOORU_DB_FILENAME, JSON.stringify(db), "utf-8");
+  }
+
+  try {
+    await fs.access(STATE_FILENAME);
+  } catch {
+    const state: State = { skippedVkIds: [] };
+    await fs.writeFile(STATE_FILENAME, JSON.stringify(state), "utf-8");
+  }
+}
+
+export async function updateBooruDb(): Promise<void> {
+  const db: BooruDb = { updatedAt: Date.now(), images: await rikibooru.queryImages("-") };
+  await fs.writeFile(BOORU_DB_FILENAME, JSON.stringify(db), "utf-8");
+}
+
+export async function postImage(): Promise<void> {
+  const booruDb: BooruDb = JSON.parse(await fs.readFile(BOORU_DB_FILENAME, "utf-8"));
+  const state: State = JSON.parse(await fs.readFile(STATE_FILENAME, "utf-8"));
 
   const meta = await rikibooru.getMetadata();
 
@@ -29,33 +58,11 @@ export async function tick(opts: {
 
   // prettier-ignore
   const allTagNames = new Map(
-    [meta[1].tags, meta[2].tags, meta[3].tags, meta[4].tags, meta[5].tags]
-      .flatMap((x) => x.map((y) => [y.tag, y.name])),
-  );
+      [meta[1].tags, meta[2].tags, meta[3].tags, meta[4].tags, meta[5].tags]
+        .flatMap((x) => x.map((y) => [y.tag, y.name])),
+    );
 
-  let booruId = meta[0].sum_count - 1;
-  let imageInfo: rikibooru.ImageInfo;
-
-  let foundImage = false;
-  while (!foundImage) {
-    imageInfo = await rikibooru.getImageInfo(booruId);
-
-    // it turns out booru ids aren't persistent, so we check by vk_id
-    if (state.skippedVkIds.includes(imageInfo.vk_id)) {
-      booruId -= 1;
-      continue;
-    }
-
-    // moderators often add tags later; we can just wait until that is done
-    if (imageInfo.tags.length === 0) {
-      booruId -= 1;
-      continue;
-    }
-
-    foundImage = true;
-  }
-
-  assert(imageInfo!);
+  const imageInfo = await selectImage({ booruDb, state });
 
   const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
 
@@ -87,5 +94,29 @@ export async function tick(opts: {
   const mastodonStatus = await mastodon.postStatusWithAttachments(status, [media]);
 
   state.skippedVkIds.push(imageInfo.vk_id);
-  await historyPush({ imageInfo, mastodonStatus });
+  await fs.writeFile(STATE_FILENAME, JSON.stringify(state), "utf-8");
+
+  const historyItem: PostHistoryItem = { imageInfo, mastodonStatus };
+  await fs.appendFile(HISTORY_FILENAME, JSON.stringify(historyItem) + "\n", "utf-8");
+}
+
+async function selectImage(opts: { booruDb: BooruDb; state: State }): Promise<rikibooru.ImageInfo> {
+  const { booruDb, state } = opts;
+
+  for (const image of booruDb.images) {
+    if (state.skippedVkIds.includes(image.vk_id)) continue;
+
+    const postImages = await rikibooru.getImagesFromVkPost(image.linktopost);
+
+    const anyNonEmptyTags = postImages.find((x) => x.tags.length > 0)?.tags;
+    if (!anyNonEmptyTags) continue;
+
+    for (const imageInfo of postImages) {
+      if (state.skippedVkIds.includes(imageInfo.vk_id)) continue;
+      if (imageInfo.tags.length === 0) imageInfo.tags = anyNonEmptyTags;
+      return imageInfo;
+    }
+  }
+
+  throw new Error("no suitable image found");
 }
