@@ -6,9 +6,12 @@ networks:
 
 services:
   bot:
+    restart: unless-stopped
     image: ghcr.io/iliazeus/mastodon-rikibooru:master
     volumes:
       - ./state.json:/app/state.json:rw
+      - ./booru.json:/app/booru.json:rw
+      - ./history.jsonl:/app/history.jsonl:rw
       - ./.env:/app/.env:ro
     networks:
       - external
@@ -16,4 +19,4 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: 64M
+          memory: 32M
