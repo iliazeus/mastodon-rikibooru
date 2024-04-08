@@ -5,8 +5,5 @@ main();
 
 async function main() {
   await bot.init();
-  await bot.postImage();
-
-  setInterval(bot.updateBooruDb, 24 * 60 * 60 * 1000);
-  setInterval(bot.postImage, 60 * 60 * 1000);
+  setInterval(bot.tick, 2 * 60 * 60 * 1000);
 }

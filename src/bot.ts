@@ -43,13 +43,8 @@ export async function init(): Promise<void> {
   }
 }
 
-export async function updateBooruDb(): Promise<void> {
-  const db: BooruDb = { updatedAt: Date.now(), images: await rikibooru.queryImages("-") };
-  await fs.writeFile(BOORU_DB_FILENAME, JSON.stringify(db), "utf-8");
-}
-
-export async function postImage(): Promise<void> {
-  const booruDb: BooruDb = JSON.parse(await fs.readFile(BOORU_DB_FILENAME, "utf-8"));
+export async function tick(): Promise<void> {
+  const booruDb: BooruDb = await updateBooruDbIfNeeded();
   const state: State = JSON.parse(await fs.readFile(STATE_FILENAME, "utf-8"));
 
   const meta = await rikibooru.getMetadata();
@@ -98,6 +93,15 @@ export async function postImage(): Promise<void> {
 
   const historyItem: PostHistoryItem = { imageInfo, mastodonStatus };
   await fs.appendFile(HISTORY_FILENAME, JSON.stringify(historyItem) + "\n", "utf-8");
+}
+
+async function updateBooruDbIfNeeded(): Promise<BooruDb> {
+  let db: BooruDb = JSON.parse(await fs.readFile(BOORU_DB_FILENAME, "utf-8"));
+  if (Date.now() - db.updatedAt <= 24 * 60 * 60 * 1000) return db;
+
+  db = { updatedAt: Date.now(), images: await rikibooru.queryImages("-") };
+  await fs.writeFile(BOORU_DB_FILENAME, JSON.stringify(db), "utf-8");
+  return db;
 }
 
 async function selectImage(opts: { booruDb: BooruDb; state: State }): Promise<rikibooru.ImageInfo> {
