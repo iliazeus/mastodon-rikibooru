@@ -10,6 +10,28 @@ assert(MASTODON_ACCESS_TOKEN);
 
 const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`;
 
+export interface Instance {
+  domain: string;
+  title: string;
+
+  configuration: {
+    accounts: {
+      max_featured_tags: number;
+      max_pinned_statuses: number;
+    };
+    statuses: {
+      max_characters: number;
+      max_media_attachments: number;
+      characters_reserved_per_url: number;
+    };
+    media_attachments: {
+      supported_mime_types: string[];
+      image_size_limit: number;
+      image_matrix_limit: number;
+    };
+  };
+}
+
 export interface Status {
   status?: string;
   media_ids?: string[];
@@ -50,6 +72,17 @@ export interface Media {
 
 export interface MediaResponse {
   id: string;
+}
+
+export async function getInstanceInfo(): Promise<Instance> {
+  const res = await fetch(MASTODON_BASE_URL + "/apiv/v2/instance", {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
+
+  if (res.status >= 400) throw new Error(await res.text());
+  return (await res.json()) as any;
 }
 
 export async function getScheduledStatuses(): Promise<StatusResponse[]> {

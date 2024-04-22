@@ -47,13 +47,14 @@ export async function tick(): Promise<void> {
   const booruDb: BooruDb = await updateBooruDbIfNeeded();
   const state: State = JSON.parse(await fs.readFile(STATE_FILENAME, "utf-8"));
 
-  const meta = await rikibooru.getMetadata();
+  const instance = await mastodon.getInstanceInfo();
+  const booruMeta = await rikibooru.getMetadata();
 
-  const allSensitiveTags = meta[3].tags.map((x) => x.tag).filter((x) => x !== "пейр");
+  const allSensitiveTags = booruMeta[3].tags.map((x) => x.tag).filter((x) => x !== "пейр");
 
   // prettier-ignore
   const allTagNames = new Map(
-      [meta[1].tags, meta[2].tags, meta[3].tags, meta[4].tags, meta[5].tags]
+      [booruMeta[1].tags, booruMeta[2].tags, booruMeta[3].tags, booruMeta[4].tags, booruMeta[5].tags]
         .flatMap((x) => x.map((y) => [y.tag, y.name])),
     );
 
@@ -67,18 +68,28 @@ export async function tick(): Promise<void> {
   const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
   if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
 
+  let text = [
+    // prettier-ignore
+    tagNames.join("; "),
+    `source: ${imageInfo.linktopost}`,
+    "",
+    hashtags.join(" "),
+  ].join("\n");
+
+  if (text.length > instance.configuration.statuses.max_characters) {
+    text = [`source: ${imageInfo.linktopost}`, "", hashtags.join(" ")].join("\n");
+  }
+
+  if (text.length > instance.configuration.statuses.max_characters) {
+    text = [`source: ${imageInfo.linktopost}`, "", "#смешарики"].join("\n");
+  }
+
   const status: mastodon.Status = {
     visibility: "public",
     language: "ru",
     sensitive: sensitiveTags.length > 0,
     spoiler_text: sensitiveTags.length > 0 ? sensitiveTags.join(", ") : undefined,
-    // prettier-ignore
-    status: [
-        tagNames.join("; "),
-        `source: ${imageInfo.linktopost}`,
-        "",
-        hashtags.join(" "),
-      ].join("\n"),
+    status: text,
   };
 
   const media: mastodon.Media = {
