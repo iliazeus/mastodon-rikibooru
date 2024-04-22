@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import assert from "node:assert/strict";
 import { env } from "node:process";
 

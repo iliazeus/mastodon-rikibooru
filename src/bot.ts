@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import { env } from "node:process";
 import * as fs from "node:fs/promises";
 
