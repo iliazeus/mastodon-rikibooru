@@ -2,8 +2,6 @@
 
 npx esbuild \
   --bundle --sourcemap --minify --charset=utf8 \
-  --platform=node --banner:js='#!/usr/bin/env node' \
+  --platform=node --format=esm \
   ./src/main.ts \
-  --outfile=./dist/main.js
-
-chmod a+x ./dist/main.js
+  --outfile=./dist/main.mjs

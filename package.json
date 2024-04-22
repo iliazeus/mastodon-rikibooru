@@ -1,8 +1,9 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "./scripts/build.sh",
-    "start": "./dist/main.js"
+    "start": "node ./dist/main.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

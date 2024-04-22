@@ -1,4 +1,4 @@
-import * as bot from "./bot";
+import * as bot from "./bot.js";
 
 main();
 

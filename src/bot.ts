@@ -3,8 +3,8 @@ import "dotenv/config";
 import { env } from "node:process";
 import * as fs from "node:fs/promises";
 
-import * as mastodon from "./mastodon";
-import * as rikibooru from "./rikibooru";
+import * as mastodon from "./mastodon.js";
+import * as rikibooru from "./rikibooru.js";
 
 const {
   BOORU_DB_FILENAME = "./booru.json",
