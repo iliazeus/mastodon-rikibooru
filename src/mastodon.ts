@@ -73,7 +73,7 @@ export interface MediaResponse {
 }
 
 export async function getInstanceInfo(): Promise<Instance> {
-  const res = await fetch(MASTODON_BASE_URL + "/apiv/v2/instance", {
+  const res = await fetch(MASTODON_BASE_URL + "/api/v2/instance", {
     headers: {
       "User-Agent": USER_AGENT,
     },
