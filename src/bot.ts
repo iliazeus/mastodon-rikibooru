@@ -22,7 +22,7 @@ interface PostHistoryItem {
 interface BooruDb {
   /** @example Date.now() */
   updatedAt: number;
-  images: rikibooru.ImageQueryResult[];
+  images: rikibooru.ImageQueryResult;
 }
 
 export async function init(): Promise<void> {
@@ -116,7 +116,7 @@ async function updateBooruDbIfNeeded(): Promise<BooruDb> {
 async function selectImage(opts: { booruDb: BooruDb; state: State }): Promise<rikibooru.ImageInfo> {
   const { booruDb, state } = opts;
 
-  for (const image of booruDb.images) {
+  for (const image of booruDb.images.photos) {
     if (state.skippedVkIds.includes(image.vk_id)) continue;
 
     const postImages = await rikibooru.getImagesFromVkPost(image.linktopost);

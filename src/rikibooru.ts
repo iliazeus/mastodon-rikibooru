@@ -57,6 +57,10 @@ export interface ImageInfo {
 }
 
 export interface ImageQueryResult {
+  photos: ImageQueryResultItem[];
+}
+
+export interface ImageQueryResultItem {
   vk_id: number;
   linktopic: string;
   linktopost: string;
@@ -80,7 +84,7 @@ export async function getImageInfo(id: number): Promise<ImageInfo> {
   return info;
 }
 
-export async function queryImages(query: string): Promise<ImageQueryResult[]> {
+export async function queryImages(query: string): Promise<ImageQueryResult> {
   const response = await fetch("https://rikibooru.host/rikibooru/query=" + query, {
     headers: { "User-Agent": USER_AGENT },
   });
