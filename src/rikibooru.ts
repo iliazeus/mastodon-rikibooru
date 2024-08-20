@@ -68,7 +68,7 @@ export interface ImageQueryResultItem {
 }
 
 export async function getMetadata(): Promise<Metadata> {
-  const response = await fetch("https://rikibooru.host/rikibooru/metadata", {
+  const response = await fetch("https://api.rikibooru.com/metadata", {
     headers: { "User-Agent": USER_AGENT },
   });
   if (response.status !== 200) throw new Error(await response.text());
@@ -76,7 +76,7 @@ export async function getMetadata(): Promise<Metadata> {
 }
 
 export async function getImageInfo(id: number): Promise<ImageInfo> {
-  const response = await fetch("https://rikibooru.host/rikibooru/getRandomArt=" + id, {
+  const response = await fetch("https://api.rikibooru.com/getRandomArt=" + id, {
     headers: { "User-Agent": USER_AGENT },
   });
   if (response.status !== 200) throw new Error(await response.text());
@@ -85,7 +85,7 @@ export async function getImageInfo(id: number): Promise<ImageInfo> {
 }
 
 export async function queryImages(query: string): Promise<ImageQueryResult> {
-  const response = await fetch("https://rikibooru.host/rikibooru/query=" + query, {
+  const response = await fetch("https://api.rikibooru.com/query=" + query, {
     headers: { "User-Agent": USER_AGENT },
   });
   if (response.status !== 200) throw new Error(await response.text());
@@ -94,7 +94,7 @@ export async function queryImages(query: string): Promise<ImageQueryResult> {
 
 export async function getImagesFromVkPost(linkToPost: string): Promise<ImageInfo[]> {
   const postId = linkToPost.slice("https://vk.com/".length);
-  const response = await fetch("https://rikibooru.host/rikibooru/post=" + postId, {
+  const response = await fetch("https://api.rikibooru.com/post=" + postId, {
     headers: { "User-Agent": USER_AGENT },
   });
   if (response.status !== 200) throw new Error(await response.text());
