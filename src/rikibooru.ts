@@ -7,7 +7,28 @@ assert(MASTODON_BASE_URL);
 assert(MASTODON_USERNAME);
 assert(OWNER_EMAIL);
 
-const USER_AGENT = `mastodon-rikibooru/0.1 (${MASTODON_BASE_URL}/@${MASTODON_USERNAME}; ${OWNER_EMAIL})`;
+async function fetch(url: string | URL, init: RequestInit = {}): Promise<Response> {
+  init.headers = new Headers(init.headers);
+  init.headers.set(
+    "User-Agent",
+    `mastodon-rikibooru/0.1 (${MASTODON_BASE_URL}/@${MASTODON_USERNAME}; ${OWNER_EMAIL})`,
+  );
+
+  try {
+    const response = await globalThis.fetch(url, init);
+
+    if (!response.ok) {
+      throw new Error(
+        `${init.method ?? "GET"} ${url} ${response.status} ${response.statusText}\n` +
+          (await response.text()),
+      );
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(`${init.method ?? "GET"} ${url}`, { cause: e });
+  }
+}
 
 export type Metadata = [
   header: MetadataHeaderItem,
@@ -68,44 +89,29 @@ export interface ImageQueryResultItem {
 }
 
 export async function getMetadata(): Promise<Metadata> {
-  const response = await fetch("https://api.rikibooru.com/metadata", {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (response.status !== 200) throw new Error(await response.text());
-  return (await response.json()) as any;
+  const response = await fetch("https://api.rikibooru.com/metadata");
+  return await response.json();
 }
 
 export async function getImageInfo(id: number): Promise<ImageInfo> {
-  const response = await fetch("https://api.rikibooru.com/getRandomArt=" + id, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (response.status !== 200) throw new Error(await response.text());
-  const [info] = (await response.json()) as any;
+  const response = await fetch("https://api.rikibooru.com/getRandomArt=" + id);
+  const [info] = await response.json();
   return info;
 }
 
 export async function queryImages(query: string): Promise<ImageQueryResult> {
-  const response = await fetch("https://api.rikibooru.com/query=" + query, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (response.status !== 200) throw new Error(await response.text());
+  const response = await fetch("https://api.rikibooru.com/query=" + query);
   return await response.json();
 }
 
 export async function getImagesFromVkPost(linkToPost: string): Promise<ImageInfo[]> {
   const postId = linkToPost.slice("https://vk.com/".length);
-  const response = await fetch("https://api.rikibooru.com/post=" + postId, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (response.status !== 200) throw new Error(await response.text());
+  const response = await fetch("https://api.rikibooru.com/post=" + postId);
   return await response.json();
 }
 
 export async function getImage(info: ImageInfo): Promise<File> {
-  const response = await fetch(info.linktopic, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (response.status !== 200) throw new Error(await response.text());
+  const response = await fetch(info.linktopic);
 
   const blob = await response.blob();
   const url = new URL(info.linktopic);

@@ -6,7 +6,29 @@ assert(MASTODON_BASE_URL);
 assert(MASTODON_USERNAME);
 assert(MASTODON_ACCESS_TOKEN);
 
-const USER_AGENT = `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`;
+async function fetch(url: string | URL, init: RequestInit = {}): Promise<Response> {
+  init.headers = new Headers(init.headers);
+  init.headers.set("Authorization", `Bearer ${MASTODON_ACCESS_TOKEN}`);
+  init.headers.set(
+    "User-Agent",
+    `mastodon-rikibooru/0.1 (+${MASTODON_BASE_URL}/@${MASTODON_USERNAME})`,
+  );
+
+  try {
+    const response = await globalThis.fetch(url, init);
+
+    if (!response.ok) {
+      throw new Error(
+        `${init.method ?? "GET"} ${url} ${response.status} ${response.statusText}\n` +
+          (await response.text()),
+      );
+    }
+
+    return response;
+  } catch (e) {
+    throw new Error(`${init.method ?? "GET"} ${url}`, { cause: e });
+  }
+}
 
 export interface Instance {
   domain: string;
@@ -73,26 +95,13 @@ export interface MediaResponse {
 }
 
 export async function getInstanceInfo(): Promise<Instance> {
-  const res = await fetch(MASTODON_BASE_URL + "/api/v2/instance", {
-    headers: {
-      "User-Agent": USER_AGENT,
-    },
-  });
-
-  if (res.status >= 400) throw new Error(await res.text());
-  return (await res.json()) as any;
+  const res = await fetch(MASTODON_BASE_URL + "/api/v2/instance");
+  return await res.json();
 }
 
 export async function getScheduledStatuses(): Promise<StatusResponse[]> {
-  const res = await fetch(MASTODON_BASE_URL + "/api/v1/scheduled_statuses?limit=40", {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Authorization: `Bearer ${MASTODON_ACCESS_TOKEN}`,
-    },
-  });
-
-  if (res.status >= 400) throw new Error(await res.text());
-  return (await res.json()) as any;
+  const res = await fetch(MASTODON_BASE_URL + "/api/v1/scheduled_statuses?limit=40");
+  return await res.json();
 }
 
 export async function postStatusWithAttachments(
@@ -106,17 +115,13 @@ export async function postStatusWithAttachments(
 
 export async function postStatus(status: Status): Promise<StatusResponse> {
   const res = await fetch(MASTODON_BASE_URL + "/api/v1/statuses", {
-    method: "post",
+    method: "POST",
     headers: {
-      "User-Agent": USER_AGENT,
-      Authorization: `Bearer ${MASTODON_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(status),
   });
-
-  if (res.status >= 400) throw new Error(await res.text());
-  return (await res.json()) as any;
+  return await res.json();
 }
 
 export async function postAttachment(att: Media): Promise<MediaResponse> {
@@ -130,16 +135,12 @@ export async function postAttachment(att: Media): Promise<MediaResponse> {
     if (error) console.warn(String(error));
     try {
       const res = await fetch(MASTODON_BASE_URL + "/api/v2/media", {
-        method: "post",
-        headers: {
-          "User-Agent": USER_AGENT,
-          Authorization: `Bearer ${MASTODON_ACCESS_TOKEN}`,
-        },
+        method: "POST",
         body: req,
       });
 
       if (res.status >= 400) throw new Error(await res.text());
-      return (await res.json()) as any;
+      return await res.json();
     } catch (e) {
       error = e;
     }
