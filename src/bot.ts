@@ -56,7 +56,7 @@ export async function tick(): Promise<void> {
         .flatMap((x) => x.map((y) => [y.tag, y.name])),
     );
 
-  const imageInfo = await selectImage({ booruDb, state });
+  const [imageInfo, imageFile] = await selectImage({ booruDb, state });
 
   const sensitiveTags = imageInfo.tags.filter((x) => allSensitiveTags.includes(x));
 
@@ -91,7 +91,7 @@ export async function tick(): Promise<void> {
   };
 
   const media: mastodon.Media = {
-    file: await rikibooru.getImage(imageInfo),
+    file: imageFile,
     description: tagNames.join("; "),
   };
 
@@ -113,7 +113,10 @@ async function updateBooruDbIfNeeded(): Promise<BooruDb> {
   return db;
 }
 
-async function selectImage(opts: { booruDb: BooruDb; state: State }): Promise<rikibooru.ImageInfo> {
+async function selectImage(opts: {
+  booruDb: BooruDb;
+  state: State;
+}): Promise<[rikibooru.ImageInfo, File]> {
   const { booruDb, state } = opts;
 
   for (const image of booruDb.images.photos) {
@@ -127,7 +130,13 @@ async function selectImage(opts: { booruDb: BooruDb; state: State }): Promise<ri
     for (const imageInfo of postImages) {
       if (state.skippedVkIds.includes(imageInfo.vk_id)) continue;
       if (imageInfo.tags.length === 0) imageInfo.tags = anyNonEmptyTags;
-      return imageInfo;
+
+      try {
+        const imageFile = await rikibooru.getImage(imageInfo);
+        return [imageInfo, imageFile];
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
