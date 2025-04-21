@@ -67,15 +67,20 @@ export async function tick(): Promise<void> {
   if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
 
   let text = [
-    // prettier-ignore
     tagNames.join("; "),
     `source: ${imageInfo.linktopost}`,
+    `artist: ${imageInfo.artist_aliases.map((x) => "https://" + x).join(" ")}`,
     "",
     hashtags.join(" "),
   ].join("\n");
 
   if (text.length > instance.configuration.statuses.max_characters) {
-    text = [`source: ${imageInfo.linktopost}`, "", hashtags.join(" ")].join("\n");
+    text = [
+      `source: ${imageInfo.linktopost}`,
+      `author: https://${imageInfo.artist_aliases[0]}`,
+      "",
+      hashtags.join(" "),
+    ].join("\n");
   }
 
   if (text.length > instance.configuration.statuses.max_characters) {
@@ -90,10 +95,7 @@ export async function tick(): Promise<void> {
     status: text,
   };
 
-  const media: mastodon.Media = {
-    file: imageFile,
-    description: tagNames.join("; "),
-  };
+  const media: mastodon.Media = { file: imageFile, description: tagNames.join("; ") };
 
   const mastodonStatus = await mastodon.postStatusWithAttachments(status, [media]);
 
