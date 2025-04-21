@@ -11,5 +11,10 @@ Restart=on-failure
 ExecStart=node /home/mastodon-rikibooru/main.mjs
 WorkingDirectory=/home/mastodon-rikibooru
 
+Environment=MASTODON_BASE_URL=<fill in>
+Environment=MASTODON_USERNAME=<fill in>
+Environment=MASTODON_ACCESS_TOKEN=<fill in>
+Environment=OWNER_EMAIL=<fill in>
+
 [Install]
 WantedBy=default.target
