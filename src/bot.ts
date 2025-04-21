@@ -122,12 +122,12 @@ async function selectImage(opts: {
   for (const image of booruDb.images.photos) {
     if (state.skippedVkIds.includes(image.vk_id)) continue;
 
-    const postImages = await rikibooru.getImagesFromVkPost(image.linktopost);
+    const post = await rikibooru.getVkPost(image.linktopost);
 
-    const anyNonEmptyTags = postImages.find((x) => x.tags.length > 0)?.tags;
+    const anyNonEmptyTags = post.content.find((x) => x.tags.length > 0)?.tags;
     if (!anyNonEmptyTags) continue;
 
-    for (const imageInfo of postImages) {
+    for (const imageInfo of post.content) {
       if (state.skippedVkIds.includes(imageInfo.vk_id)) continue;
       if (imageInfo.tags.length === 0) imageInfo.tags = anyNonEmptyTags;
 

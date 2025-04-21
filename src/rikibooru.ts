@@ -75,6 +75,13 @@ export interface ImageInfo {
   linktopost: string;
   tags: string[];
   parent_id: unknown;
+  artist_aliases: string[];
+}
+
+export interface VkPost {
+  content: ImageInfo[];
+  next: string | null;
+  previous: string | null;
 }
 
 export interface ImageQueryResult {
@@ -104,7 +111,7 @@ export async function queryImages(query: string): Promise<ImageQueryResult> {
   return await response.json();
 }
 
-export async function getImagesFromVkPost(linkToPost: string): Promise<ImageInfo[]> {
+export async function getVkPost(linkToPost: string): Promise<VkPost> {
   const postId = linkToPost.slice("https://vk.com/".length);
   const response = await fetch("https://api.rikibooru.com/post=" + postId);
   return await response.json();
