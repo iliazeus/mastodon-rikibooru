@@ -54,6 +54,7 @@ export interface Instance {
 
 export interface Status {
   status?: string;
+  content_type?: string;
   media_ids?: string[];
   sensitive?: boolean;
   spoiler_text?: string;

@@ -15,6 +15,7 @@ Environment=MASTODON_BASE_URL=<fill in>
 Environment=MASTODON_USERNAME=<fill in>
 Environment=MASTODON_ACCESS_TOKEN=<fill in>
 Environment=OWNER_EMAIL=<fill in>
+Environment=USE_MARKDOWN=<fill in>
 
 [Install]
 WantedBy=default.target

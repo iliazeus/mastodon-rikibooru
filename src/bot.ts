@@ -8,6 +8,7 @@ const {
   BOORU_DB_FILENAME = "./booru.json",
   STATE_FILENAME = "./state.json",
   HISTORY_FILENAME = "./history.jsonl",
+  USE_MARKDOWN = false,
 } = env;
 
 interface State {
@@ -66,26 +67,21 @@ export async function tick(): Promise<void> {
   const hashtags = imageInfo.tags.filter((x) => !x.startsWith("artist_")).map((x) => "#" + x);
   if (!hashtags.includes("#смешарики")) hashtags.unshift("#смешарики");
 
-  let text = [
-    tagNames.join("; "),
-    `source: ${imageInfo.linktopost}`,
-    `artist: ${imageInfo.artist_aliases.map((x) => "https://" + x).join(" ")}`,
-    "",
-    hashtags.join(" "),
-  ].join("\n");
+  let descriptionLine = tagNames.join("; ");
+  let sourceLine = `source: ${imageInfo.linktopost}`;
+  let artistLine = `artist: ${imageInfo.artist_aliases.map((x) => "https://" + x).join(" ")}`;
+  let hastagsLine = hashtags.join(" ");
 
-  if (text.length > instance.configuration.statuses.max_characters) {
-    text = [
-      `source: ${imageInfo.linktopost}`,
-      `author: https://${imageInfo.artist_aliases[0]}`,
-      "",
-      hashtags.join(" "),
-    ].join("\n");
-  }
+  let textCandidates = [
+    [descriptionLine, sourceLine, artistLine, "", hastagsLine].join("\n"),
+    [sourceLine, artistLine, "", hastagsLine].join("\n"),
+    [sourceLine, artistLine, "", "#смешарики"].join("\n"),
+  ];
 
-  if (text.length > instance.configuration.statuses.max_characters) {
-    text = [`source: ${imageInfo.linktopost}`, "", "#смешарики"].join("\n");
-  }
+  let maxTextLength = instance.configuration.statuses.max_characters;
+  let text = textCandidates.find((x) => x.length <= maxTextLength);
+  if (!text) text = textCandidates.at(-1);
+  if (!text) text = "";
 
   const status: mastodon.Status = {
     visibility: "public",
