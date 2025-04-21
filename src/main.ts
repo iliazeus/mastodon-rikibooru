@@ -1,3 +1,5 @@
+import "./polyfill.js"
+
 import { env } from "node:process";
 
 import * as bot from "./bot.js";
