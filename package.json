@@ -7,12 +7,12 @@
   },
   "devDependencies": {
     "@types/node": "^18.19.86",
-    "dotenv": "^16.4.5",
-    "esbuild": "^0.20.2",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.3"
+    "dotenv": "^16.5.0",
+    "esbuild": "^0.25.2",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
   },
   "optionalDependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.5.0"
   }
 }
