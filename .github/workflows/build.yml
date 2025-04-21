@@ -1,0 +1,23 @@
+name: Build a main.mjs
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - run: npm ci
+      - run: npm run build
+      - run: cp mastodon-rikibooru.service dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          draft: ${{ github.ref_type != 'tag' || !startsWith(github.ref_name, 'v') }}
+          files: "dist/*"
+          fail_on_unmatched_files: false

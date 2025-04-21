@@ -1,0 +1,15 @@
+[Unit]
+Description=A Mastodon API bot that reposts images from https://rikibooru.com
+
+[Service]
+User=mastodon-rikibooru
+Group=mastodon-rikibooru
+
+Type=exec
+Restart=on-failure
+
+ExecStart=node /home/mastodon-rikibooru/main.mjs
+WorkingDirectory=/home/mastodon-rikibooru
+
+[Install]
+WantedBy=default.target
